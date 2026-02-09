@@ -10,7 +10,6 @@
 		D7B1EF292F39D2A2006B8DA6 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7B1EF282F39D2A2006B8DA6 /* WidgetKit.framework */; };
 		D7B1EF2B2F39D2A2006B8DA6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7B1EF2A2F39D2A2006B8DA6 /* SwiftUI.framework */; };
 		D7B1EF382F39D2A3006B8DA6 /* MindfulnessWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D7B1EF262F39D2A2006B8DA6 /* MindfulnessWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		D7B1EF422F39D729006B8DA6 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D7B1EF412F39D729006B8DA6 /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,7 +42,6 @@
 		D7B1EF282F39D2A2006B8DA6 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		D7B1EF2A2F39D2A2006B8DA6 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		D7B1EF3F2F39D302006B8DA6 /* MindfulnessWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MindfulnessWidgetExtension.entitlements; sourceTree = "<group>"; };
-		D7B1EF412F39D729006B8DA6 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -95,7 +93,6 @@
 		D7B1EEC82F39CF23006B8DA6 = {
 			isa = PBXGroup;
 			children = (
-				D7B1EF412F39D729006B8DA6 /* README.md */,
 				D7B1EF3F2F39D302006B8DA6 /* MindfulnessWidgetExtension.entitlements */,
 				D7B1EED32F39CF23006B8DA6 /* MindfulnessApp */,
 				D7B1EF2C2F39D2A2006B8DA6 /* MindfulnessWidget */,
@@ -214,7 +211,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D7B1EF422F39D729006B8DA6 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

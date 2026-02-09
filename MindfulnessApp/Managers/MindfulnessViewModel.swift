@@ -165,6 +165,22 @@ class MindfulnessViewModel: ObservableObject {
             }
         }
     }
+    
+    /// 在指定时间添加正念记录
+    /// - Parameters:
+    ///   - minutes: 正念时长（分钟）
+    ///   - date: 开始时间
+    func addManualSession(minutes: Double, at date: Date) {
+        let startDate = date
+        let endDate = date.addingTimeInterval(minutes * 60)
+        
+        healthKitManager.saveMindfulnessSession(startTime: startDate, endTime: endDate) { success, _ in
+            if success {
+                self.fetchData()
+                self.fetchHistoryData()
+            }
+        }
+    }
 
     func saveSpecificSession(start: Date, end: Date) {
         healthKitManager.saveMindfulnessSession(startTime: start, endTime: end) { success, _ in
