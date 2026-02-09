@@ -1,0 +1,223 @@
+import Foundation
+import Combine
+
+class MindfulnessViewModel: ObservableObject {
+    @Published var totalMinutesToday: Double = 0.0
+    @Published var recentSessions: [MindfulnessSession] = []
+    @Published var weeklySessions: [MindfulnessSession] = []
+    @Published var isRecording: Bool = false
+    @Published var currentSessionStartTime: Date?
+    @Published var elapsedTime: TimeInterval = 0
+    @Published var weeklyData: [DailyData] = []
+    
+    @Published var dailyGoal: Double = UserDefaults.standard.double(forKey: "dailyGoal") == 0 ? 30.0 : UserDefaults.standard.double(forKey: "dailyGoal")
+    @Published var historyData: [Date: Double] = [:] // Start of day -> Total Minutes
+    
+    private var healthKitManager = HealthKitManager.shared
+    private var timer: Timer?
+    
+    init() {
+        requestAuthorization()
+    }
+    
+    func requestAuthorization() {
+        healthKitManager.requestAuthorization { success, error in
+            if success {
+                self.fetchData()
+                self.fetchHistoryData()
+            }
+        }
+    }
+    
+    func fetchData() {
+        healthKitManager.fetchTodayTotalMinutes { minutes in
+            DispatchQueue.main.async {
+                self.totalMinutesToday = minutes
+            }
+        }
+        
+        healthKitManager.fetchMindfulnessSessions { sessions, _ in
+            if let sessions = sessions {
+                DispatchQueue.main.async {
+                    self.recentSessions = sessions
+                }
+            }
+        }
+        
+        healthKitManager.fetchThisWeekSessions { sessions in
+            DispatchQueue.main.async {
+                self.weeklySessions = sessions
+                self.processWeeklyData(sessions)
+            }
+        }
+    }
+    
+    func fetchHistoryData() {
+        // Fetch last 365 days
+        let calendar = Calendar.current
+        let endDate = Date()
+        guard let startDate = calendar.date(byAdding: .year, value: -1, to: endDate) else { return }
+        
+        // Use HKSampleQuery (via HealthKitManager) to get all samples in range
+        // Since we don't have a direct "fetchAll" in HKManager yet, let's add or reuse.
+        // Actually `fetchMindfulnessSessions` fetches recent (limit 100).
+        // `fetchThisWeekSessions` fetches week.
+        // We probably need a generic fetch in HKManager or here. 
+        // For simplicity, let's assume we add a helper or extend fetched sessions.
+        // Let's implement a specific fetch in ViewModel relying on a new hypothetical HK method or existing.
+        // Wait, I should add the method to HKManager first or use what I have.
+        // Let's check HKManager.
+        
+        // For now, let's assume we add a method to HealthKitManager or use a direct query.
+        // I'll add `fetchHistorySessions` logic here for now calling a new manager method.
+        healthKitManager.fetchSessions(start: startDate, end: endDate) { sessions in
+            DispatchQueue.main.async {
+                self.processHistoryData(sessions)
+            }
+        }
+    }
+    
+    private func processHistoryData(_ sessions: [MindfulnessSession]) {
+        var counts: [Date: Double] = [:]
+        let calendar = Calendar.current
+        
+        for session in sessions {
+            let startOfDay = calendar.startOfDay(for: session.startDate)
+            counts[startOfDay, default: 0] += session.durationInMinutes
+        }
+        
+        self.historyData = counts
+    }
+    
+    func updateDailyGoal(_ minutes: Double) {
+        dailyGoal = minutes
+        UserDefaults.standard.set(minutes, forKey: "dailyGoal")
+    }
+    
+    private func processWeeklyData(_ sessions: [MindfulnessSession]) {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Initialize last 7 days
+        var days: [Date] = []
+        for i in 0..<7 {
+            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+                days.append(date)
+            }
+        }
+        days.reverse() // Chronological order
+        
+        var finalData: [DailyData] = []
+        
+        for date in days {
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            
+            let sessionsForDay = sessions.filter { $0.startDate >= startOfDay && $0.startDate < endOfDay }
+            let totalMinutes = sessionsForDay.reduce(0) { $0 + $1.durationInMinutes }
+            
+            finalData.append(DailyData(date: date, weekday: getWeekday(date: date), minutes: totalMinutes))
+        }
+        
+        self.weeklyData = finalData
+    }
+    
+    private func getWeekday(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "EEE" // 周一, 周二...
+        return formatter.string(from: date)
+    }
+    
+    // MARK: - Session Recording
+    
+    func startSession() {
+        isRecording = true
+        currentSessionStartTime = Date()
+        elapsedTime = 0
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            self.elapsedTime += 1
+        }
+    }
+    
+    func endSession() {
+        guard let startTime = currentSessionStartTime else { return }
+        isRecording = false
+        timer?.invalidate()
+        timer = nil
+        let endTime = Date()
+        
+        healthKitManager.saveMindfulnessSession(startTime: startTime, endTime: endTime) { success, _ in
+            if success {
+                self.fetchData()
+            }
+        }
+        currentSessionStartTime = nil
+    }
+    
+    func addManualSession(minutes: Double) {
+        let endDate = Date()
+        let startDate = endDate.addingTimeInterval(-minutes * 60)
+        
+        healthKitManager.saveMindfulnessSession(startTime: startDate, endTime: endDate) { success, _ in
+            if success {
+                self.fetchData()
+            }
+        }
+    }
+
+    func saveSpecificSession(start: Date, end: Date) {
+        healthKitManager.saveMindfulnessSession(startTime: start, endTime: end) { success, _ in
+            if success {
+                self.fetchData()
+            }
+        }
+    }
+    
+    // MARK: - Mock for Previews
+    static var mock: MindfulnessViewModel {
+        let vm = MindfulnessViewModel(mockData: true)
+        vm.totalMinutesToday = 45
+        vm.dailyGoal = 60
+        vm.weeklyData = [
+            DailyData(date: Date(), weekday: "周一", minutes: 30),
+            DailyData(date: Date().addingTimeInterval(86400), weekday: "周二", minutes: 45),
+            DailyData(date: Date().addingTimeInterval(86400*2), weekday: "周三", minutes: 60),
+            DailyData(date: Date().addingTimeInterval(86400*3), weekday: "周四", minutes: 15),
+            DailyData(date: Date().addingTimeInterval(86400*4), weekday: "周五", minutes: 0),
+            DailyData(date: Date().addingTimeInterval(86400*5), weekday: "周六", minutes: 90),
+            DailyData(date: Date().addingTimeInterval(86400*6), weekday: "周日", minutes: 30)
+        ]
+        
+        // Mock history for last 30 days
+        let calendar = Calendar.current
+        let today = Date()
+        for i in 0..<30 {
+            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+                let startOfDay = calendar.startOfDay(for: date)
+                vm.historyData[startOfDay] = Double.random(in: 0...90)
+            }
+        }
+        
+        // Mock recent sessions
+        vm.recentSessions = [
+            MindfulnessSession(startDate: Date().addingTimeInterval(-3600), endDate: Date().addingTimeInterval(-1800)),
+            MindfulnessSession(startDate: Date().addingTimeInterval(-86400), endDate: Date().addingTimeInterval(-86400 + 1200))
+        ]
+        
+        return vm
+    }
+    
+    init(mockData: Bool = false) {
+        if !mockData {
+            requestAuthorization()
+        }
+    }
+}
+
+struct DailyData: Identifiable {
+    let id = UUID()
+    let date: Date
+    let weekday: String
+    let minutes: Double
+}

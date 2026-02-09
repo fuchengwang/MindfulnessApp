@@ -6,14 +6,68 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D7B1EF292F39D2A2006B8DA6 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7B1EF282F39D2A2006B8DA6 /* WidgetKit.framework */; };
+		D7B1EF2B2F39D2A2006B8DA6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7B1EF2A2F39D2A2006B8DA6 /* SwiftUI.framework */; };
+		D7B1EF382F39D2A3006B8DA6 /* MindfulnessWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D7B1EF262F39D2A2006B8DA6 /* MindfulnessWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D7B1EF422F39D729006B8DA6 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D7B1EF412F39D729006B8DA6 /* README.md */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D7B1EF362F39D2A3006B8DA6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D7B1EEC92F39CF23006B8DA6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D7B1EF252F39D2A2006B8DA6;
+			remoteInfo = MindfulnessWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D7B1EF3D2F39D2A3006B8DA6 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D7B1EF382F39D2A3006B8DA6 /* MindfulnessWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		D7B1EED12F39CF23006B8DA6 /* MindfulnessApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindfulnessApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7B1EF262F39D2A2006B8DA6 /* MindfulnessWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MindfulnessWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7B1EF282F39D2A2006B8DA6 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		D7B1EF2A2F39D2A2006B8DA6 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		D7B1EF3F2F39D302006B8DA6 /* MindfulnessWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MindfulnessWidgetExtension.entitlements; sourceTree = "<group>"; };
+		D7B1EF412F39D729006B8DA6 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D7B1EF392F39D2A3006B8DA6 /* Exceptions for "MindfulnessWidget" folder in "MindfulnessWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D7B1EF252F39D2A2006B8DA6 /* MindfulnessWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D7B1EED32F39CF23006B8DA6 /* MindfulnessApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MindfulnessApp;
+			sourceTree = "<group>";
+		};
+		D7B1EF2C2F39D2A2006B8DA6 /* MindfulnessWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D7B1EF392F39D2A3006B8DA6 /* Exceptions for "MindfulnessWidget" folder in "MindfulnessWidgetExtension" target */,
+			);
+			path = MindfulnessWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,13 +80,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D7B1EF232F39D2A2006B8DA6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7B1EF2B2F39D2A2006B8DA6 /* SwiftUI.framework in Frameworks */,
+				D7B1EF292F39D2A2006B8DA6 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		D7B1EEC82F39CF23006B8DA6 = {
 			isa = PBXGroup;
 			children = (
+				D7B1EF412F39D729006B8DA6 /* README.md */,
+				D7B1EF3F2F39D302006B8DA6 /* MindfulnessWidgetExtension.entitlements */,
 				D7B1EED32F39CF23006B8DA6 /* MindfulnessApp */,
+				D7B1EF2C2F39D2A2006B8DA6 /* MindfulnessWidget */,
+				D7B1EF272F39D2A2006B8DA6 /* Frameworks */,
 				D7B1EED22F39CF23006B8DA6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +108,18 @@
 			isa = PBXGroup;
 			children = (
 				D7B1EED12F39CF23006B8DA6 /* MindfulnessApp.app */,
+				D7B1EF262F39D2A2006B8DA6 /* MindfulnessWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D7B1EF272F39D2A2006B8DA6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D7B1EF282F39D2A2006B8DA6 /* WidgetKit.framework */,
+				D7B1EF2A2F39D2A2006B8DA6 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +132,12 @@
 				D7B1EECD2F39CF23006B8DA6 /* Sources */,
 				D7B1EECE2F39CF23006B8DA6 /* Frameworks */,
 				D7B1EECF2F39CF23006B8DA6 /* Resources */,
+				D7B1EF3D2F39D2A3006B8DA6 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D7B1EF372F39D2A3006B8DA6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				D7B1EED32F39CF23006B8DA6 /* MindfulnessApp */,
@@ -69,6 +148,28 @@
 			productName = MindfulnessApp;
 			productReference = D7B1EED12F39CF23006B8DA6 /* MindfulnessApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D7B1EF252F39D2A2006B8DA6 /* MindfulnessWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D7B1EF3A2F39D2A3006B8DA6 /* Build configuration list for PBXNativeTarget "MindfulnessWidgetExtension" */;
+			buildPhases = (
+				D7B1EF222F39D2A2006B8DA6 /* Sources */,
+				D7B1EF232F39D2A2006B8DA6 /* Frameworks */,
+				D7B1EF242F39D2A2006B8DA6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D7B1EF2C2F39D2A2006B8DA6 /* MindfulnessWidget */,
+			);
+			name = MindfulnessWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = MindfulnessWidgetExtension;
+			productReference = D7B1EF262F39D2A2006B8DA6 /* MindfulnessWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +182,9 @@
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					D7B1EED02F39CF23006B8DA6 = {
+						CreatedOnToolsVersion = 26.1;
+					};
+					D7B1EF252F39D2A2006B8DA6 = {
 						CreatedOnToolsVersion = 26.1;
 					};
 				};
@@ -100,12 +204,21 @@
 			projectRoot = "";
 			targets = (
 				D7B1EED02F39CF23006B8DA6 /* MindfulnessApp */,
+				D7B1EF252F39D2A2006B8DA6 /* MindfulnessWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		D7B1EECF2F39CF23006B8DA6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7B1EF422F39D729006B8DA6 /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D7B1EF242F39D2A2006B8DA6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +235,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D7B1EF222F39D2A2006B8DA6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D7B1EF372F39D2A3006B8DA6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D7B1EF252F39D2A2006B8DA6 /* MindfulnessWidgetExtension */;
+			targetProxy = D7B1EF362F39D2A3006B8DA6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D7B1EEDA2F39CF24006B8DA6 /* Debug */ = {
@@ -251,16 +379,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MindfulnessApp/MindfulnessApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CH654SF2Y4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "正念";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "我们需要访问您的正念数据以进行统计和展示。”";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "我们需要将您的正念练习时长保存到健康应用中。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 17;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -269,12 +402,16 @@
 				PRODUCT_BUNDLE_IDENTIFIER = wfc.MindfulnessApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -283,16 +420,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MindfulnessApp/MindfulnessApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CH654SF2Y4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "正念";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "我们需要访问您的正念数据以进行统计和展示。”";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "我们需要将您的正念练习时长保存到健康应用中。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 17;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -301,8 +443,76 @@
 				PRODUCT_BUNDLE_IDENTIFIER = wfc.MindfulnessApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		D7B1EF3B2F39D2A3006B8DA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MindfulnessWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CH654SF2Y4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindfulnessWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "正念";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = wfc.MindfulnessApp.MindfulnessWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D7B1EF3C2F39D2A3006B8DA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MindfulnessWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CH654SF2Y4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindfulnessWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "正念";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = wfc.MindfulnessApp.MindfulnessWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -327,6 +537,15 @@
 			buildConfigurations = (
 				D7B1EEDD2F39CF24006B8DA6 /* Debug */,
 				D7B1EEDE2F39CF24006B8DA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D7B1EF3A2F39D2A3006B8DA6 /* Build configuration list for PBXNativeTarget "MindfulnessWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7B1EF3B2F39D2A3006B8DA6 /* Debug */,
+				D7B1EF3C2F39D2A3006B8DA6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
