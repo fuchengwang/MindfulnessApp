@@ -56,11 +56,25 @@ struct SpecificTimeView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 30)
             
-            // 4. 保存按钮
+            // 4. 重置按钮
+            resetButton
+            
+            // 5. 保存按钮
             saveButton
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
+        .onChange(of: startTime) { _ in
+            // 1小时模式下，自动跟随起点所在的小时
+            if timeScale == .hour1 {
+                let newHour = Calendar.current.component(.hour, from: startTime)
+                if newHour != baseHour {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        baseHour = newHour
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showingDatePicker) {
             datePickerSheet
         }
@@ -217,10 +231,33 @@ struct SpecificTimeView: View {
         .disabled(isSaving)
     }
     
+    // MARK: - 重置按钮
+    
+    private var resetButton: some View {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                resetToDefault()
+            }
+        }) {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .medium))
+                Text("重置时间")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+            }
+            .foregroundStyle(Color(.tertiaryLabel))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color(.systemGray6))
+            .cornerRadius(14)
+        }
+    }
+    
     // MARK: - 日期选择 Sheet
     
     private var datePickerSheet: some View {
         VStack {
+            Spacer()
             DatePicker(
                 "选择日期",
                 selection: $selectedDate,
@@ -238,6 +275,7 @@ struct SpecificTimeView: View {
             .padding()
         }
         .presentationDetents([.medium])
+        
     }
     
     // MARK: - 逻辑
@@ -274,6 +312,15 @@ struct SpecificTimeView: View {
             startTime = newStart
             endTime = newEnd
         }
+    }
+    
+    /// 重置为默认状态（起=当前时间-15分钟，止=当前时间）
+    private func resetToDefault() {
+        let now = Date()
+        let start = now.addingTimeInterval(-900)
+        startTime = start
+        endTime = now
+        baseHour = Calendar.current.component(.hour, from: start)
     }
     
     // MARK: - 工具

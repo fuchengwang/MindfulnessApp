@@ -25,12 +25,13 @@ enum TimeScale: String, CaseIterable {
 
 // MARK: - 圆环时间选择器
 
-/// iOS 17 原生风格圆环选择器
+/// iOS 17 原生风格圆环选择器，支持多圈
 struct CircularTimeSlider: View {
     @Binding var startTime: Date
     @Binding var endTime: Date
     var scale: TimeScale = .hour1
     var baseOffset: Int = 0
+
     
     // ── 样式常量 ──
     private let trackWidth: CGFloat = 24
@@ -39,6 +40,8 @@ struct CircularTimeSlider: View {
     // ── 拖拽状态 ──
     @State private var startAngle: Double = 0
     @State private var endAngle: Double = 0
+    @State private var extraLaps: Int = 0           // 额外圈数
+    @State private var previousEndAngle: Double = 0 // 检测越过起点
     @State private var dragComponent: DragComponent? = nil
     @State private var dragStartAngle: Double = 0
     @State private var initialStartAngle: Double = 0
@@ -58,16 +61,16 @@ struct CircularTimeSlider: View {
                 // ① 轨道凹槽 - 拟物化
                 trackGroove(size: size, radius: radius)
                 
-                // ② 刻度 - 改为内侧
+                // ② 刻度 - 内侧
                 ticks(at: radius - trackWidth / 2 - 8)
                 
-                // ③ 时间标注 - 放在刻度更内侧
+                // ③ 时间标注
                 labels(at: radius - trackWidth / 2 - 28, dialSize: size)
                 
-                // ④ 选中弧线 - 渐变流光
-                selectionArc(center: center, radius: radius)
+                // ④ 选中弧线 - 多圈统一叠加
+                activeTimeArc(center: center, radius: radius)
                 
-                // ⑤ 手柄 - 浮雕质感
+                // ⑤ 手柄
                 knob(text: "起", angle: startAngle, radius: radius)
                 knob(text: "止", angle: endAngle, radius: radius)
                 
@@ -78,7 +81,10 @@ struct CircularTimeSlider: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { v in onDrag(v, center: center) }
-                    .onEnded { _ in dragComponent = nil }
+                    .onEnded { _ in
+                        dragComponent = nil
+                        syncAnglesFromDates() // 拖拽结束后重新同步角度
+                    }
             )
             .onAppear {
                 feedback.prepare()
@@ -86,8 +92,8 @@ struct CircularTimeSlider: View {
             }
             .onChange(of: startTime)  { _ in if dragComponent == nil { syncAnglesFromDates() } }
             .onChange(of: endTime)    { _ in if dragComponent == nil { syncAnglesFromDates() } }
-            .onChange(of: scale)      { _ in syncAnglesFromDates() }
-            .onChange(of: baseOffset) { _ in syncAnglesFromDates() }
+            .onChange(of: scale)      { _ in extraLaps = 0; syncAnglesFromDates() }
+            .onChange(of: baseOffset) { _ in if dragComponent == nil { syncAnglesFromDates() } }
         }
         .aspectRatio(1, contentMode: .fit)
     }
@@ -97,7 +103,6 @@ struct CircularTimeSlider: View {
     /// ① 轨道 — 深邃凹槽
     private func trackGroove(size: CGFloat, radius: CGFloat) -> some View {
         ZStack {
-            // 背景底色：深灰到浅灰的微渐变，模拟金属槽
             Circle()
                 .stroke(
                     AngularGradient(
@@ -114,7 +119,6 @@ struct CircularTimeSlider: View {
                 )
                 .frame(width: radius * 2, height: radius * 2)
             
-            // 内阴影 (Inner Shadow) 模拟凹陷：通过两个稍大/稍小的圆叠加
             // 顶部高光
             Circle()
                 .stroke(Color.white.opacity(0.5), lineWidth: 1)
@@ -137,41 +141,55 @@ struct CircularTimeSlider: View {
         }
     }
     
-    /// ④ 选中弧线 — 活力渐变
-    private func selectionArc(center: CGPoint, radius: CGFloat) -> some View {
-        // 计算渐变的旋转角度，使其跟随选区 (unused but explains the gradient logic)
-        // let midAngle = (startAngle + endAngle) / 2
+    /// ④ 选中弧线 - 多圈统一叠加
+    private func activeTimeArc(center: CGPoint, radius: CGFloat) -> some View {
+        ZStack {
+            // 1. 绘制已经跑完的整圈 (每圈透明度叠加)
+            ForEach(0..<extraLaps, id: \.self) { _ in
+                gradientArc(center: center, radius: radius, start: startAngle, end: startAngle + 360)
+            }
+            
+            // 2. 绘制当前正在跑的那一段
+            gradientArc(center: center, radius: radius, start: startAngle, end: endAngle)
+        }
+    }
+
+    /// 通用渐变弧线生成器
+    private func gradientArc(center: CGPoint, radius: CGFloat, start: Double, end: Double) -> some View {
+        // 使用循环渐变色 (Head == Tail) 确保首尾无缝衔接
+        let gradient = AngularGradient(
+            gradient: Gradient(colors: [
+                Color.mindfulnessBlue.opacity(0.8), // 起点
+                Color.cyan.opacity(0.9),            // 中间提亮
+                Color.blue.opacity(0.9),            // 过渡
+                Color.mindfulnessBlue.opacity(0.8)  // 回归起点 (闭环)
+            ]),
+            center: .center,
+            startAngle: .degrees(start - 90),       // 渐变起始角度跟随弧线起点
+            endAngle: .degrees(start - 90 + 360)    // 渐变拉伸一整圈
+        )
         
         return Path { p in
             p.addArc(
                 center: center, radius: radius,
-                startAngle: .degrees(startAngle - 90),
-                endAngle:   .degrees(endAngle - 90),
+                startAngle: .degrees(start - 90),
+                endAngle:   .degrees(end - 90),
                 clockwise: false
             )
         }
         .stroke(
-            AngularGradient(
-                gradient: Gradient(colors: [
-                    Color.mindfulnessBlue.opacity(0.8),
-                    Color.mindfulnessBlue,
-                    Color.blue.opacity(0.9)
-                ]),
-                center: .center,
-                startAngle: .degrees(startAngle - 90),
-                endAngle: .degrees(startAngle - 90 + 360)
-            ),
-            style: StrokeStyle(lineWidth: trackWidth - 6, lineCap: .round) // 略细于轨道，嵌入其中
+            gradient,
+            style: StrokeStyle(lineWidth: trackWidth - 6, lineCap: .round)
         )
-        // 柔和辉光
-        .shadow(color: Color.mindfulnessBlue.opacity(0.4), radius: 8, x: 0, y: 0)
+        // 固定基础透明度，利用 ZStack 叠加产生变深效果
+        .opacity(0.6) 
+        .shadow(color: Color.mindfulnessBlue.opacity(0.3), radius: 6, x: 0, y: 0)
     }
     
     /// ⑤ 手柄 — 浮起的瓷白色按钮
     private func knob(text: String, angle: Double, radius: CGFloat) -> some View {
         let rad = (angle - 90) * .pi / 180
         return ZStack {
-            // 实体
             Circle()
                 .fill(
                     LinearGradient(
@@ -181,26 +199,22 @@ struct CircularTimeSlider: View {
                     )
                 )
             
-            // 边框环
             Circle()
                 .strokeBorder(Color.white, lineWidth: 2)
                 .shadow(color: .black.opacity(0.1), radius: 1)
             
-            
-            // 文字
             Text(text)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.mindfulnessBlue) // 统一用蓝色
+                .foregroundStyle(Color.mindfulnessBlue)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         }
         .frame(width: knobDiameter, height: knobDiameter)
-        // 强烈的投影制造悬浮感
         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 3)
         .offset(x: radius * cos(rad), y: radius * sin(rad))
     }
     
-    /// ② 刻度 - 细密而克制
+    /// ② 刻度
     private func ticks(at r: CGFloat) -> some View {
         let cfg = tickCfg
         return ZStack {
@@ -272,9 +286,8 @@ struct CircularTimeSlider: View {
     /// ⑥ 中央面板
     private func centerPanel(fitWidth: CGFloat) -> some View {
         VStack(spacing: 6) {
-            // 时间行 - 使用 ViewThatFits 适配窄屏/大字号
+            // 时间行
             ViewThatFits(in: .horizontal) {
-                // 1. 标准横排
                 HStack(spacing: 0) {
                     timeColumn(label: "开始", time: startTime)
                     
@@ -286,7 +299,6 @@ struct CircularTimeSlider: View {
                     timeColumn(label: "结束", time: endTime)
                 }
                 
-                // 2. 空间不足时自动切换为竖排
                 VStack(spacing: 4) {
                     timeColumn(label: "开始", time: startTime)
                     Image(systemName: "arrow.down")
@@ -295,14 +307,15 @@ struct CircularTimeSlider: View {
                     timeColumn(label: "结束", time: endTime)
                 }
             }
-            .layoutPriority(1) // 确保时间显示优先占用空间
+            .layoutPriority(1)
             
             // 时长胶囊
             durationBadge
+            
+
         }
         .frame(maxWidth: fitWidth)
-        // 允许整体缩小以放入圆环中心
-        .minimumScaleFactor(0.4) // 允许缩小到 40%
+        .minimumScaleFactor(0.4)
     }
     
     private func timeColumn(label: String, time: Date) -> some View {
@@ -342,7 +355,7 @@ struct CircularTimeSlider: View {
             .minimumScaleFactor(0.5)
     }
     
-    // MARK: ──────────────────────── 交互逻辑 (不变) ────────────────────────
+    // MARK: ──────────────────────── 交互逻辑 ────────────────────────
     
     private func onDrag(_ value: DragGesture.Value, center: CGPoint) {
         let dx = value.location.x - center.x
@@ -359,58 +372,78 @@ struct CircularTimeSlider: View {
                 dragComponent = .interval
                 dragStartAngle = a; initialStartAngle = startAngle; initialEndAngle = endAngle
             }
+            previousEndAngle = endAngle
         }
         guard let c = dragComponent else { return }
         let step = scale.stepDegrees
-        let snap = round(a / step) * step
+        var snap = round(a / step) * step
+        if snap >= 360 { snap -= 360 }
         
         switch c {
         case .start:
             guard snap != startAngle else { return }
-            feedback.selectionChanged(); startAngle = snap; pushDates(.start)
+            // 使用角度差值直接计算时间变化量，避免绝对映射的反馈环问题
+            let deltaAngle = adiff(snap, startAngle)
+            let deltaSecs = deltaAngle / 360 * scale.totalMinutes * 60
+            feedback.selectionChanged()
+            startAngle = snap
+            startTime = startTime.addingTimeInterval(deltaSecs)
+            
         case .end:
             guard snap != endAngle else { return }
-            feedback.selectionChanged(); endAngle = snap; pushDates(.end)
+            
+            // 检测是否越过起点（多圈逻辑）
+            let oldArcLen = arcLength(from: startAngle, to: previousEndAngle)
+            let newArcLen = arcLength(from: startAngle, to: snap)
+            
+            if oldArcLen > 270 && newArcLen < 90 {
+                extraLaps += 1
+            } else if oldArcLen < 90 && newArcLen > 270 && extraLaps > 0 {
+                extraLaps -= 1
+            }
+            
+            previousEndAngle = snap
+            feedback.selectionChanged()
+            endAngle = snap
+            pushEndDate()
+            
         case .interval:
             let target = round((initialStartAngle + adiff(a, dragStartAngle)) / step) * step
             guard target != startAngle else { return }
-            feedback.selectionChanged()
             let delta = adiff(target, startAngle)
+            let deltaSecs = delta / 360 * scale.totalMinutes * 60
+            feedback.selectionChanged()
             startAngle = target
             endAngle = (endAngle + delta).truncatingRemainder(dividingBy: 360)
             if endAngle < 0 { endAngle += 360 }
-            pushDates(.start); pushDates(.end)
+            previousEndAngle = endAngle
+            startTime = startTime.addingTimeInterval(deltaSecs)
+            endTime = endTime.addingTimeInterval(deltaSecs)
         }
     }
     
-    // MARK: ──────────────────────── 数据同步 (不变) ────────────────────────
+    /// 计算从 from 到 to 顺时针的弧长（0~360）
+    private func arcLength(from: Double, to: Double) -> Double {
+        var d = to - from
+        if d < 0 { d += 360 }
+        return d
+    }
     
-    private func pushDates(_ c: DragComponent) {
+    // MARK: ──────────────────────── 数据同步 ────────────────────────
+    
+    /// 仅用于终点手柄：根据角度绝对映射到时间
+    private func pushEndDate() {
         let cal = Calendar.current
         let periodMinutes = Int(scale.totalMinutes)
-        
-        func toAbs(_ angle: Double) -> Int {
-            (Int((angle / 360) * scale.totalMinutes) + baseOffset) % 1440
+        var m = (Int((endAngle / 360) * scale.totalMinutes) + baseOffset) % 1440
+        // 多圈模式：加上额外圈数
+        m += extraLaps * periodMinutes
+        // 非多圈时终点越过起点需加一个周期
+        if extraLaps == 0 && endAngle < startAngle {
+            m += periodMinutes
         }
-        
-        if c == .start || c == .interval {
-            var m = toAbs(startAngle)
-            // 当起点越过 0° 逆时针（startAngle > endAngle），说明用户把起点拖到了上一个周期
-            if c == .start && startAngle > endAngle {
-                m -= periodMinutes
-                if m < 0 { m += 1440 }
-            }
-            startTime = cal.date(bySettingHour: m/60, minute: m%60, second: 0, of: startTime) ?? startTime
-        }
-        if c == .end || c == .interval {
-            var m = toAbs(endAngle)
-            // 当终点越过 0° 顺时针（endAngle < startAngle 且拖的是 end），说明终点在下一个周期
-            if c == .end && endAngle < startAngle {
-                m += periodMinutes
-                if m >= 1440 { m -= 1440 }
-            }
-            endTime = cal.date(bySettingHour: m/60, minute: m%60, second: 0, of: endTime) ?? endTime
-        }
+        m = ((m % 1440) + 1440) % 1440
+        endTime = cal.date(bySettingHour: m/60, minute: m%60, second: 0, of: endTime) ?? endTime
     }
     
     private func syncAnglesFromDates() {
@@ -424,13 +457,14 @@ struct CircularTimeSlider: View {
         er = er.truncatingRemainder(dividingBy: scale.totalMinutes)
         startAngle = sr / scale.totalMinutes * 360
         endAngle   = er / scale.totalMinutes * 360
+        previousEndAngle = endAngle
     }
     
     // MARK: ──────────────────────── 工具 ────────────────────────
     
     private func durationMinutes() -> Double {
         var d = endAngle - startAngle; if d <= 0 { d += 360 }
-        return d / 360 * scale.totalMinutes
+        return (d + Double(extraLaps) * 360) / 360 * scale.totalMinutes
     }
     private func inArc(_ a: Double) -> Bool {
         startAngle <= endAngle ? (a >= startAngle && a <= endAngle) : (a >= startAngle || a <= endAngle)
