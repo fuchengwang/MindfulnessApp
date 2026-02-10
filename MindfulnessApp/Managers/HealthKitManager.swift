@@ -35,7 +35,10 @@ class HealthKitManager: ObservableObject {
     
     // Save Mindfulness Session
     func saveMindfulnessSession(startTime: Date, endTime: Date, completion: @escaping (Bool, Error?) -> Void) {
-        guard let mindfulnessType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else { return }
+        guard let mindfulnessType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            completion(false, NSError(domain: "com.mindfulnessapp", code: 3, userInfo: [NSLocalizedDescriptionKey: "无法获取正念类型"]))
+            return
+        }
         
         let mindfulSession = HKCategorySample(type: mindfulnessType, value: 0, start: startTime, end: endTime)
         

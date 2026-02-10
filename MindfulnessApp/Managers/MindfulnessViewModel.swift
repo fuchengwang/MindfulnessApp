@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import WidgetKit
 
 class MindfulnessViewModel: ObservableObject {
     @Published var totalMinutesToday: Double = 0.0
@@ -150,18 +151,23 @@ class MindfulnessViewModel: ObservableObject {
         healthKitManager.saveMindfulnessSession(startTime: startTime, endTime: endTime) { success, _ in
             if success {
                 self.fetchData()
+                WidgetCenter.shared.reloadAllTimelines()
             }
         }
         currentSessionStartTime = nil
     }
     
-    func addManualSession(minutes: Double) {
+    func addManualSession(minutes: Double, completion: @escaping (Bool) -> Void = { _ in }) {
         let endDate = Date()
         let startDate = endDate.addingTimeInterval(-minutes * 60)
         
         healthKitManager.saveMindfulnessSession(startTime: startDate, endTime: endDate) { success, _ in
             if success {
                 self.fetchData()
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+            DispatchQueue.main.async {
+                completion(success)
             }
         }
     }
@@ -170,7 +176,7 @@ class MindfulnessViewModel: ObservableObject {
     /// - Parameters:
     ///   - minutes: 正念时长（分钟）
     ///   - date: 开始时间
-    func addManualSession(minutes: Double, at date: Date) {
+    func addManualSession(minutes: Double, at date: Date, completion: @escaping (Bool) -> Void = { _ in }) {
         let startDate = date
         let endDate = date.addingTimeInterval(minutes * 60)
         
@@ -178,14 +184,23 @@ class MindfulnessViewModel: ObservableObject {
             if success {
                 self.fetchData()
                 self.fetchHistoryData()
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+            DispatchQueue.main.async {
+                completion(success)
             }
         }
     }
 
-    func saveSpecificSession(start: Date, end: Date) {
+    func saveSpecificSession(start: Date, end: Date, completion: @escaping (Bool) -> Void = { _ in }) {
         healthKitManager.saveMindfulnessSession(startTime: start, endTime: end) { success, _ in
             if success {
                 self.fetchData()
+                self.fetchHistoryData() // Don't forget history!
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+            DispatchQueue.main.async {
+                completion(success)
             }
         }
     }

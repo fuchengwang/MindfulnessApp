@@ -135,7 +135,7 @@ struct MonthView: View {
                                 .font(.system(size: 14, weight: isToday ? .bold : .medium)) // Larger font
                                 .foregroundColor(isToday ? .white : .primary)
                                 .frame(width: 28, height: 28) // Fixed frame for centering
-                                .background(isToday ? Color.accentColor : Color.clear)
+                                .background(isToday ? Color.cyan : Color.clear)
                                 .clipShape(Circle())
                             
                             // Ring

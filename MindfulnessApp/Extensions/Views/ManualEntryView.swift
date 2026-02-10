@@ -17,9 +17,13 @@ struct ManualEntryView: View {
                 
                 ScrollView {
                     if selectedTab == 0 {
-                        JustNowView(viewModel: viewModel)
+                        JustNowView(viewModel: viewModel, onSaveSuccess: {
+                            dismiss()
+                        })
                     } else {
-                        SpecificTimeView(viewModel: viewModel)
+                        SpecificTimeView(viewModel: viewModel, onSaveSuccess: {
+                            dismiss()
+                        })
                     }
                 }
             }

@@ -1,10 +1,11 @@
 import SwiftUI
 
 struct JustNowView: View {
-    @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: MindfulnessViewModel
+    var onSaveSuccess: () -> Void
     
     @State private var selectedMinutes: Double = 10
+    @State private var isSaving: Bool = false
     
     let presets: [Double] = [5, 10, 15, 20, 30, 45, 60]
     
@@ -61,18 +62,38 @@ struct JustNowView: View {
             Spacer()
             
             Button(action: {
-                viewModel.addManualSession(minutes: selectedMinutes)
-                dismiss()
+                isSaving = true
+                let impact = UIImpactFeedbackGenerator(style: .medium)
+                impact.impactOccurred()
+                
+                viewModel.addManualSession(minutes: selectedMinutes) { success in
+                    if success {
+                        // Keep isSaving = true to prevent duplicate clicks while dismissing
+                        let notification = UINotificationFeedbackGenerator()
+                        notification.notificationOccurred(.success)
+                        onSaveSuccess()
+                    } else {
+                        isSaving = false
+                    }
+                }
             }) {
-                Text("记录本次正念")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 55)
-                    .background(Color.mindfulnessBlue.gradient)
-                    .cornerRadius(16)
-                    .shadow(radius: 5)
+                HStack {
+                    if isSaving {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding(.trailing, 5)
+                    }
+                    Text(isSaving ? "正在保存..." : "记录本次正念")
+                        .font(.headline)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 55)
+                .background(isSaving ? Color.gray.gradient : Color.mindfulnessBlue.gradient)
+                .cornerRadius(16)
+                .shadow(radius: isSaving ? 0 : 5)
             }
+            .disabled(isSaving)
             .padding()
         }
         .padding()
@@ -80,5 +101,5 @@ struct JustNowView: View {
 }
 
 #Preview {
-    JustNowView(viewModel: MindfulnessViewModel.mock)
+    JustNowView(viewModel: MindfulnessViewModel.mock, onSaveSuccess: {})
 }
