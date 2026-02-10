@@ -387,15 +387,28 @@ struct CircularTimeSlider: View {
     
     private func pushDates(_ c: DragComponent) {
         let cal = Calendar.current
+        let periodMinutes = Int(scale.totalMinutes)
+        
         func toAbs(_ angle: Double) -> Int {
             (Int((angle / 360) * scale.totalMinutes) + baseOffset) % 1440
         }
+        
         if c == .start || c == .interval {
-            let m = toAbs(startAngle)
+            var m = toAbs(startAngle)
+            // 当起点越过 0° 逆时针（startAngle > endAngle），说明用户把起点拖到了上一个周期
+            if c == .start && startAngle > endAngle {
+                m -= periodMinutes
+                if m < 0 { m += 1440 }
+            }
             startTime = cal.date(bySettingHour: m/60, minute: m%60, second: 0, of: startTime) ?? startTime
         }
         if c == .end || c == .interval {
-            let m = toAbs(endAngle)
+            var m = toAbs(endAngle)
+            // 当终点越过 0° 顺时针（endAngle < startAngle 且拖的是 end），说明终点在下一个周期
+            if c == .end && endAngle < startAngle {
+                m += periodMinutes
+                if m >= 1440 { m -= 1440 }
+            }
             endTime = cal.date(bySettingHour: m/60, minute: m%60, second: 0, of: endTime) ?? endTime
         }
     }
