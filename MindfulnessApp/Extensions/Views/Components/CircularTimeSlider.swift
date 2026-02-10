@@ -58,11 +58,11 @@ struct CircularTimeSlider: View {
                 // ① 轨道凹槽 - 拟物化
                 trackGroove(size: size, radius: radius)
                 
-                // ② 刻度 - 细密而克制
-                ticks(at: radius + trackWidth / 2 + 12)
+                // ② 刻度 - 改为内侧
+                ticks(at: radius - trackWidth / 2 - 8)
                 
-                // ③ 时间标注 - 放在内侧
-                labels(at: radius - trackWidth / 2 - 20, dialSize: size)
+                // ③ 时间标注 - 放在刻度更内侧
+                labels(at: radius - trackWidth / 2 - 28, dialSize: size)
                 
                 // ④ 选中弧线 - 渐变流光
                 selectionArc(center: center, radius: radius)
@@ -186,9 +186,10 @@ struct CircularTimeSlider: View {
                 .strokeBorder(Color.white, lineWidth: 2)
                 .shadow(color: .black.opacity(0.1), radius: 1)
             
+            
             // 文字
             Text(text)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.mindfulnessBlue) // 统一用蓝色
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
