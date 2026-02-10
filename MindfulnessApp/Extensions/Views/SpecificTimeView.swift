@@ -69,6 +69,38 @@ struct SpecificTimeView: View {
     // MARK: - 头部栏
     
     private var headerRow: some View {
+        ViewThatFits(in: .horizontal) {
+            // 1. 尝试使用当前系统字号
+            headerContent
+            
+            // 2. 也是系统字号但允许稍微压缩（利用 minimumScaleFactor）
+            headerContent
+                .minimumScaleFactor(0.9)
+            
+            // 3. 限制最大为 辅助功能3 (Accessibility3)
+            headerContent
+                .dynamicTypeSize(...DynamicTypeSize.accessibility3)
+            
+            // 4. 限制最大为 辅助功能1 (Accessibility1)
+            headerContent
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            
+            // 5. 限制最大为 XXXLarge (人体工学极限)
+            headerContent
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            
+            // 6. 限制最大为 Large (标准大)
+            headerContent
+                .dynamicTypeSize(...DynamicTypeSize.large)
+            
+            // 7. 最后的保底：允许在 Large 基础上进一步从整体上缩放
+            headerContent
+                .dynamicTypeSize(...DynamicTypeSize.large)
+                .minimumScaleFactor(0.5)
+        }
+    }
+    
+    private var headerContent: some View {
         HStack {
             // 日期选择
             Button(action: { showingDatePicker = true }) {
@@ -80,6 +112,8 @@ struct SpecificTimeView: View {
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundColor(.primary)
                         .bold()
+                        .lineLimit(1)
+                        .fixedSize() // 确保文字完整显示，不被压缩（通过 ViewThatFits 换别的尺寸）
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundColor(.secondary)
@@ -115,6 +149,8 @@ struct SpecificTimeView: View {
                     Text(timeScale.rawValue)
                         .font(.system(.subheadline, design: .rounded))
                         .bold()
+                        .lineLimit(1)
+                        .fixedSize() // 确保文字完整显示
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }
@@ -176,7 +212,7 @@ struct SpecificTimeView: View {
             .frame(height: 50)
             .background(isSaving ? Color.gray.gradient : Color.mindfulnessBlue.gradient)
             .cornerRadius(14)
-            .shadow(radius: isSaving ? 0 : 4)
+//            .shadow(radius: isSaving ? 0 : 4)
         }
         .disabled(isSaving)
     }

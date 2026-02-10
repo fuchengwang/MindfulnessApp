@@ -33,7 +33,7 @@ struct CircularTimeSlider: View {
     var baseOffset: Int = 0
     
     // ── 样式常量 ──
-    private let trackWidth: CGFloat = 38
+    private let trackWidth: CGFloat = 24
     private let knobDiameter: CGFloat = 34
     
     // ── 拖拽状态 ──
@@ -51,30 +51,30 @@ struct CircularTimeSlider: View {
     var body: some View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
-            let radius = (size - trackWidth) / 2
+            let radius = (size - trackWidth) / 2 - 10
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
             
             ZStack {
-                // ① 轨道凹槽
+                // ① 轨道凹槽 - 拟物化
                 trackGroove(size: size, radius: radius)
                 
-                // ② 刻度
-                ticks(at: radius - trackWidth / 2 - 6)
+                // ② 刻度 - 细密而克制
+                ticks(at: radius + trackWidth / 2 + 12)
                 
-                // ③ 时间标注
-                labels(at: radius - trackWidth / 2 - 24, dialSize: size)
+                // ③ 时间标注 - 放在内侧
+                labels(at: radius - trackWidth / 2 - 20, dialSize: size)
                 
-                // ④ 选中弧线
+                // ④ 选中弧线 - 渐变流光
                 selectionArc(center: center, radius: radius)
                 
-                // ⑤ 手柄
-                knob(systemName: "figure.mind.and.body", angle: startAngle, radius: radius)
-                knob(systemName: "timer", angle: endAngle, radius: radius)
+                // ⑤ 手柄 - 浮雕质感
+                knob(text: "起", angle: startAngle, radius: radius)
+                knob(text: "止", angle: endAngle, radius: radius)
                 
-                // ⑥ 中央
-                centerPanel(fitWidth: radius * 1.2)
+                // ⑥ 中央面板
+                centerPanel(fitWidth: radius * 1.3)
             }
-            .compositingGroup() // 合成图层，阴影更自然
+            .compositingGroup()
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { v in onDrag(v, center: center) }
@@ -94,28 +94,55 @@ struct CircularTimeSlider: View {
     
     // MARK: ──────────────────────── 视觉层 ────────────────────────
     
-    /// ① 轨道 — 内凹质感
+    /// ① 轨道 — 深邃凹槽
     private func trackGroove(size: CGFloat, radius: CGFloat) -> some View {
         ZStack {
-            // 外圈：轻微投影模拟凹槽
+            // 背景底色：深灰到浅灰的微渐变，模拟金属槽
             Circle()
-                .stroke(Color(.systemGray5), lineWidth: trackWidth)
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            Color(.systemGray5),
+                            Color(.systemGray6),
+                            Color(.systemGray5)
+                        ]),
+                        center: .center,
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(360)
+                    ),
+                    lineWidth: trackWidth
+                )
                 .frame(width: radius * 2, height: radius * 2)
             
-            // 内嵌阴影 — 用一个略小的圆叠加模拟 inset shadow
+            // 内阴影 (Inner Shadow) 模拟凹陷：通过两个稍大/稍小的圆叠加
+            // 顶部高光
             Circle()
-                .stroke(Color(.systemGray4).opacity(0.25), lineWidth: 1)
-                .frame(width: radius * 2 - trackWidth + 2, height: radius * 2 - trackWidth + 2)
+                .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                .frame(width: radius * 2 + trackWidth, height: radius * 2 + trackWidth)
+                .mask(
+                    Circle()
+                        .stroke(lineWidth: trackWidth)
+                        .frame(width: radius * 2, height: radius * 2)
+                )
             
+            // 底部阴影
             Circle()
-                .stroke(Color.white.opacity(0.4), lineWidth: 1)
-                .frame(width: radius * 2 + trackWidth - 2, height: radius * 2 + trackWidth - 2)
+                .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                .frame(width: radius * 2 - trackWidth, height: radius * 2 - trackWidth)
+                .mask(
+                    Circle()
+                        .stroke(lineWidth: trackWidth)
+                        .frame(width: radius * 2, height: radius * 2)
+                )
         }
     }
     
-    /// ④ 选中弧线 — 纯色，柔和光晕
+    /// ④ 选中弧线 — 活力渐变
     private func selectionArc(center: CGPoint, radius: CGFloat) -> some View {
-        Path { p in
+        // 计算渐变的旋转角度，使其跟随选区 (unused but explains the gradient logic)
+        // let midAngle = (startAngle + endAngle) / 2
+        
+        return Path { p in
             p.addArc(
                 center: center, radius: radius,
                 startAngle: .degrees(startAngle - 90),
@@ -124,43 +151,75 @@ struct CircularTimeSlider: View {
             )
         }
         .stroke(
-            Color.mindfulnessBlue.gradient,       // 系统内置微渐变，非常含蓄
-            style: StrokeStyle(lineWidth: trackWidth, lineCap: .round)
+            AngularGradient(
+                gradient: Gradient(colors: [
+                    Color.mindfulnessBlue.opacity(0.8),
+                    Color.mindfulnessBlue,
+                    Color.blue.opacity(0.9)
+                ]),
+                center: .center,
+                startAngle: .degrees(startAngle - 90),
+                endAngle: .degrees(startAngle - 90 + 360)
+            ),
+            style: StrokeStyle(lineWidth: trackWidth - 6, lineCap: .round) // 略细于轨道，嵌入其中
         )
-        .shadow(color: Color.mindfulnessBlue.opacity(0.25), radius: 10, x: 0, y: 0)
+        // 柔和辉光
+        .shadow(color: Color.mindfulnessBlue.opacity(0.4), radius: 8, x: 0, y: 0)
     }
     
-    /// ⑤ 手柄 — 嵌在弧线上的白色圆粒
-    private func knob(systemName: String, angle: Double, radius: CGFloat) -> some View {
+    /// ⑤ 手柄 — 浮起的瓷白色按钮
+    private func knob(text: String, angle: Double, radius: CGFloat) -> some View {
         let rad = (angle - 90) * .pi / 180
         return ZStack {
+            // 实体
             Circle()
-                .fill(.white)
+                .fill(
+                    LinearGradient(
+                        colors: [.white, Color(.systemGray6)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
             
+            // 边框环
             Circle()
-                .strokeBorder(Color(.separator).opacity(0.35), lineWidth: 0.5)
+                .strokeBorder(Color.white, lineWidth: 2)
+                .shadow(color: .black.opacity(0.1), radius: 1)
             
-            Image(systemName: systemName)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.mindfulnessBlue)
+            // 文字
+            Text(text)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.mindfulnessBlue) // 统一用蓝色
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
         .frame(width: knobDiameter, height: knobDiameter)
-        .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+        // 强烈的投影制造悬浮感
+        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 3)
         .offset(x: radius * cos(rad), y: radius * sin(rad))
     }
     
-    /// ② 刻度
+    /// ② 刻度 - 细密而克制
     private func ticks(at r: CGFloat) -> some View {
         let cfg = tickCfg
         return ZStack {
             ForEach(0..<cfg.total, id: \.self) { i in
                 let deg = Double(i) / Double(cfg.total) * 360
                 let major = i % cfg.majorEvery == 0
-                Capsule()
-                    .fill(Color.primary.opacity(major ? 0.22 : 0.08))
-                    .frame(width: major ? 1.5 : 0.8, height: major ? 8 : 4)
-                    .offset(y: -r)
-                    .rotationEffect(.degrees(deg))
+                
+                if major {
+                    Capsule()
+                        .fill(Color.primary.opacity(0.3))
+                        .frame(width: 2, height: 6)
+                        .offset(y: -r)
+                        .rotationEffect(.degrees(deg))
+                } else {
+                    Circle()
+                        .fill(Color.primary.opacity(0.15))
+                        .frame(width: 2, height: 2)
+                        .offset(y: -r)
+                        .rotationEffect(.degrees(deg))
+                }
             }
         }
     }
@@ -183,6 +242,8 @@ struct CircularTimeSlider: View {
                     .font(.system(size: sz, weight: .medium, design: .rounded))
                     .foregroundStyle(Color(.secondaryLabel))
                     .position(x: r * cos(rad), y: r * sin(rad))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
         }
         .frame(width: 0, height: 0)
@@ -210,23 +271,37 @@ struct CircularTimeSlider: View {
     /// ⑥ 中央面板
     private func centerPanel(fitWidth: CGFloat) -> some View {
         VStack(spacing: 6) {
-            // 时间行
-            HStack(spacing: 0) {
-                timeColumn(label: "开始", time: startTime)
+            // 时间行 - 使用 ViewThatFits 适配窄屏/大字号
+            ViewThatFits(in: .horizontal) {
+                // 1. 标准横排
+                HStack(spacing: 0) {
+                    timeColumn(label: "开始", time: startTime)
+                    
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color(.quaternaryLabel))
+                        .padding(.horizontal, 6)
+                    
+                    timeColumn(label: "结束", time: endTime)
+                }
                 
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color(.quaternaryLabel))
-                    .padding(.horizontal, 6)
-                
-                timeColumn(label: "结束", time: endTime)
+                // 2. 空间不足时自动切换为竖排
+                VStack(spacing: 4) {
+                    timeColumn(label: "开始", time: startTime)
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color(.quaternaryLabel))
+                    timeColumn(label: "结束", time: endTime)
+                }
             }
+            .layoutPriority(1) // 确保时间显示优先占用空间
             
             // 时长胶囊
             durationBadge
         }
         .frame(maxWidth: fitWidth)
-        .minimumScaleFactor(0.5)
+        // 允许整体缩小以放入圆环中心
+        .minimumScaleFactor(0.4) // 允许缩小到 40%
     }
     
     private func timeColumn(label: String, time: Date) -> some View {
@@ -235,10 +310,15 @@ struct CircularTimeSlider: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color(.tertiaryLabel))
                 .textCase(.uppercase)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Text(fmtTime(time))
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.primary)
                 .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .minimumScaleFactor(0.8)
         }
     }
     
@@ -257,6 +337,8 @@ struct CircularTimeSlider: View {
                 Capsule()
                     .fill(Color.mindfulnessBlue.opacity(0.1))
             )
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
     }
     
     // MARK: ──────────────────────── 交互逻辑 (不变) ────────────────────────

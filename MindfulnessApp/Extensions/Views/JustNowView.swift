@@ -91,7 +91,7 @@ struct JustNowView: View {
                 .frame(height: 55)
                 .background(isSaving ? Color.gray.gradient : Color.mindfulnessBlue.gradient)
                 .cornerRadius(16)
-                .shadow(radius: isSaving ? 0 : 5)
+//                .shadow(radius: isSaving ? 0 : 5)
             }
             .disabled(isSaving)
             .padding()
