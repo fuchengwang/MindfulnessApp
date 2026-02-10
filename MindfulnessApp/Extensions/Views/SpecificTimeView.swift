@@ -54,15 +54,18 @@ struct SpecificTimeView: View {
                 baseOffset: baseOffset
             )
             .padding(.horizontal, 12)
-            .padding(.vertical, 30)
+            .padding(.top, 30)
+            .padding(.bottom, -10)
             
             // 4. 重置按钮
             resetButton
-            
+                .padding(.bottom, 8)
             // 5. 保存按钮
             saveButton
+                .padding()
         }
         .padding(.horizontal)
+
         .padding(.bottom, 8)
         .onChange(of: startTime) { _ in
             // 1小时模式下，自动跟随起点所在的小时

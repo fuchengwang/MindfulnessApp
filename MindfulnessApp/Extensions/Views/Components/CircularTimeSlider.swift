@@ -458,6 +458,16 @@ struct CircularTimeSlider: View {
         startAngle = sr / scale.totalMinutes * 360
         endAngle   = er / scale.totalMinutes * 360
         previousEndAngle = endAngle
+        
+        // 根据时间差自动计算圈数（修复重置时圈数不更新的问题）
+        let duration = endTime.timeIntervalSince(startTime)
+        let periodSeconds = scale.totalMinutes * 60
+        if duration > 1.0 { // 避免精度问题，至少要有1秒差值
+            // 逻辑：(0, period] -> 0 laps; (period, 2*period] -> 1 lap
+            extraLaps = Int((duration - 1.0) / periodSeconds)
+        } else {
+            extraLaps = 0
+        }
     }
     
     // MARK: ──────────────────────── 工具 ────────────────────────

@@ -11,7 +11,7 @@ struct HistoryView: View {
                         VStack(alignment: .leading) {
                             Text("正念练习")
                                 .font(.headline)
-                            Text(session.startDate.formatted(date: .abbreviated, time: .shortened))
+                            Text(chineseDateString(session.startDate))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -28,6 +28,13 @@ struct HistoryView: View {
                 viewModel.fetchData()
             }
         }
+    }
+    
+    private func chineseDateString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "zh_CN")
+        f.dateFormat = "yyyy年M月d日 HH:mm"
+        return f.string(from: date)
     }
 }
 
