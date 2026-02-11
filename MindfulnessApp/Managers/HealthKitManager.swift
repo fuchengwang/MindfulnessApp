@@ -88,7 +88,12 @@ class HealthKitManager: ObservableObject {
                 return result + sample.endDate.timeIntervalSince(sample.startDate)
             }
             
-            completion(totalSeconds / 60.0)
+            let totalMinutes = totalSeconds / 60.0
+            
+            // Sync to Shared Data for Widget
+            SharedDataManager.shared.saveTodayMindfulnessMinutes(totalMinutes)
+            
+            completion(totalMinutes)
         }
         
         healthStore.execute(query)

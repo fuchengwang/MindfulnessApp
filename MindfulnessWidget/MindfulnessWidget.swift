@@ -1,6 +1,6 @@
 import WidgetKit
 import SwiftUI
-import HealthKit
+
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
@@ -13,40 +13,24 @@ struct Provider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        // Fetch data from HealthKit
-        // Note: HealthKit data might be unavailable if device is locked.
+        // Read from shared UserDefaults instead of querying HealthKit directly
+        // This ensures data is available even if the device is locked/HealthKit is inaccessible
+        let appGroupId = "group.com.mindfulnessapp.shared"
+        let keyTodayMindfulnessMinutes = "todayMindfulnessMinutes"
+        
+        let sharedDefaults = UserDefaults(suiteName: appGroupId)
+        let totalMinutes = sharedDefaults?.double(forKey: keyTodayMindfulnessMinutes) ?? 0.0
+        
         let currentDate = Date()
-        let startOfDay = Calendar.current.startOfDay(for: currentDate)
+        let entry = SimpleEntry(date: currentDate, totalMinutes: totalMinutes)
         
-        let healthStore = HKHealthStore()
-        guard HKHealthStore.isHealthDataAvailable(),
-              let type = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
-            let entry = SimpleEntry(date: currentDate, totalMinutes: 0)
-            let timeline = Timeline(entries: [entry], policy: .after(currentDate.addingTimeInterval(3600)))
-            completion(timeline)
-            return
-        }
+        // Update policies
+        // .never means we rely on the app to reload the timeline when data changes
+        // but adding a backup refresh capability is fine.
+        let nextUpdate = currentDate.addingTimeInterval(30 * 60) // Backup update every 30 mins
+        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         
-        // Predicate for today
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: currentDate, options: .strictStartDate)
-        
-        let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
-            
-            var totalMinutes = 0.0
-            
-            if let samples = samples as? [HKCategorySample] {
-                let totalSeconds = samples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                totalMinutes = totalSeconds / 60.0
-            }
-            
-            let entry = SimpleEntry(date: currentDate, totalMinutes: totalMinutes)
-            let nextUpdate = currentDate.addingTimeInterval(15 * 60) // Update every 15 mins
-            let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-            
-            completion(timeline)
-        }
-        
-        healthStore.execute(query)
+        completion(timeline)
     }
 }
 
