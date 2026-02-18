@@ -12,6 +12,7 @@ import SwiftUI
 struct MindfulnessWidgetBundle: WidgetBundle {
     var body: some Widget {
         MindfulnessWidget()
+        WeeklyTrendWidget()
         // MindfulnessWidgetControl() // ControlWidget is iOS 18+ only
     }
 }

@@ -22,8 +22,8 @@ class HealthKitManager: ObservableObject {
             return
         }
         
-        let typesToShare: Set = [mindfulnessType]
-        let typesToRead: Set = [mindfulnessType]
+        let typesToShare: Set = [mindfulnessType, HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!]
+        let typesToRead: Set = [mindfulnessType, HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!]
         
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             DispatchQueue.main.async {
@@ -46,27 +46,69 @@ class HealthKitManager: ObservableObject {
             completion(success, error)
         }
     }
-    
-    // Fetch Recent Sessions
-    func fetchMindfulnessSessions(limit: Int = 10, completion: @escaping ([MindfulnessSession]?, Error?) -> Void) {
-        guard let mindfulnessType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else { return }
-        
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-        let query = HKSampleQuery(sampleType: mindfulnessType, predicate: nil, limit: limit, sortDescriptors: [sortDescriptor]) { _, samples, error in
-            
-            guard let samples = samples as? [HKCategorySample], error == nil else {
-                completion(nil, error)
-                return
-            }
-            
-            let sessions = samples.map { sample in
-                MindfulnessSession(startDate: sample.startDate, endDate: sample.endDate)
-            }
-            
-            completion(sessions, nil)
+
+    // Save Sleep Analysis
+    func saveSleepAnalysis(startTime: Date, endTime: Date, completion: @escaping (Bool, Error?) -> Void) {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            completion(false, NSError(domain: "com.mindfulnessapp", code: 4, userInfo: [NSLocalizedDescriptionKey: "无法获取睡眠类型"]))
+            return
         }
         
-        healthStore.execute(query)
+        // For simplicity, we save as "InBed" or "Asleep". Since user just records "Sleep", "Asleep" (Unspecified) is appropriate or InBed.
+        // Let's use .asleepUnspecified for general sleep recording if available, or .inBed.
+        // Actually, for manual entry, .asleep is best.
+        let sleepSample = HKCategorySample(type: sleepType, value: HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue, start: startTime, end: endTime)
+        
+        healthStore.save(sleepSample) { success, error in
+            completion(success, error)
+        }
+    }
+    
+    // Fetch Recent Sessions (Mindfulness & Sleep)
+    func fetchRecentSessions(limit: Int = 20, completion: @escaping ([MindfulnessSession]?, Error?) -> Void) {
+        let mindfulnessType = HKObjectType.categoryType(forIdentifier: .mindfulSession)!
+        let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+        
+        // Filter by current app source
+        let sourcePredicate = HKQuery.predicateForObjects(from: .default())
+        
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+        
+        // Run two queries in parallel (simplified)
+        var allSessions: [MindfulnessSession] = []
+        let group = DispatchGroup()
+        
+        // 1. Mindfulness
+        group.enter()
+        let q1 = HKSampleQuery(sampleType: mindfulnessType, predicate: sourcePredicate, limit: limit, sortDescriptors: [sortDescriptor]) { _, samples, _ in
+            if let samples = samples as? [HKCategorySample] {
+                let s = samples.map { MindfulnessSession(startDate: $0.startDate, endDate: $0.endDate, type: .mindfulness) }
+                allSessions.append(contentsOf: s)
+            }
+            group.leave()
+        }
+        healthStore.execute(q1)
+        
+        // 2. Sleep
+        group.enter()
+        let q2 = HKSampleQuery(sampleType: sleepType, predicate: sourcePredicate, limit: limit, sortDescriptors: [sortDescriptor]) { _, samples, _ in
+            if let samples = samples as? [HKCategorySample] {
+                // Sleep samples might be fragmented (InBed, AsleepUnspecified).
+                // We just map valid samples.
+                // Filter out short samples if needed? Or just show raw records.
+                // Assuming "Asleep" or "InBed" records created by US are valid sessions.
+                let s = samples.map { MindfulnessSession(startDate: $0.startDate, endDate: $0.endDate, type: .sleep) }
+                allSessions.append(contentsOf: s)
+            }
+            group.leave()
+        }
+        healthStore.execute(q2)
+        
+        group.notify(queue: .main) {
+            // Sort combined list
+            let sorted = allSessions.sorted { $0.endDate > $1.endDate }
+            completion(Array(sorted.prefix(limit)), nil)
+        }
     }
     
     // Fetch Today's Total Minutes
@@ -120,7 +162,7 @@ class HealthKitManager: ObservableObject {
              }
              
              let sessions = samples.map { sample in
-                 MindfulnessSession(startDate: sample.startDate, endDate: sample.endDate)
+                 MindfulnessSession(startDate: sample.startDate, endDate: sample.endDate, type: .mindfulness)
              }
              completion(sessions)
          }
@@ -140,7 +182,7 @@ class HealthKitManager: ObservableObject {
             }
             
             let sessions = samples.map { sample in
-                MindfulnessSession(startDate: sample.startDate, endDate: sample.endDate)
+                MindfulnessSession(startDate: sample.startDate, endDate: sample.endDate, type: .mindfulness)
             }
             completion(sessions)
         }

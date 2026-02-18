@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import WidgetKit
+import SwiftUI
 
 class MindfulnessViewModel: ObservableObject {
     @Published var totalMinutesToday: Double = 0.0
@@ -11,8 +12,23 @@ class MindfulnessViewModel: ObservableObject {
     @Published var elapsedTime: TimeInterval = 0
     @Published var weeklyData: [DailyData] = []
     
-    @Published var dailyGoal: Double = UserDefaults.standard.double(forKey: "dailyGoal") == 0 ? 30.0 : UserDefaults.standard.double(forKey: "dailyGoal")
+    @Published var dailyGoal: Double = UserDefaults.standard.double(forKey: "dailyGoal") == 0 ? 30.0 : UserDefaults.standard.double(forKey: "dailyGoal") {
+        didSet {
+            UserDefaults.standard.set(dailyGoal, forKey: "dailyGoal")
+        }
+    }
+    
+    @Published var showSleepRecording: Bool = UserDefaults.standard.bool(forKey: "showSleepRecording") {
+        didSet {
+            UserDefaults.standard.set(showSleepRecording, forKey: "showSleepRecording")
+        }
+    }
     @Published var historyData: [Date: Double] = [:] // Start of day -> Total Minutes
+    
+    // Sleep Record Toast State
+    @Published var showSleepToast: Bool = false
+    @Published var sleepToastMessage: String = ""
+    private var pendingSleepSaveItem: DispatchWorkItem?
     
     private var healthKitManager = HealthKitManager.shared
     private var timer: Timer?
@@ -37,7 +53,7 @@ class MindfulnessViewModel: ObservableObject {
             }
         }
         
-        healthKitManager.fetchMindfulnessSessions { sessions, _ in
+        healthKitManager.fetchRecentSessions { sessions, _ in
             if let sessions = sessions {
                 DispatchQueue.main.async {
                     self.recentSessions = sessions
@@ -121,6 +137,14 @@ class MindfulnessViewModel: ObservableObject {
         }
         
         self.weeklyData = finalData
+        
+        // Save to Shared UserDefaults for Widget
+        if let sharedDefaults = UserDefaults(suiteName: "group.com.mindfulnessapp.shared") {
+            if let encoded = try? JSONEncoder().encode(finalData) {
+                sharedDefaults.set(encoded, forKey: "weeklyMindfulnessData")
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+        }
     }
     
     private func getWeekday(date: Date) -> String {
@@ -205,6 +229,41 @@ class MindfulnessViewModel: ObservableObject {
         }
     }
     
+    func saveSleepSession(start: Date, end: Date, completion: @escaping (Bool) -> Void = { _ in }) {
+        healthKitManager.saveSleepAnalysis(startTime: start, endTime: end) { success, _ in
+             DispatchQueue.main.async {
+                 completion(success)
+             }
+        }
+    }
+    
+    func preSaveSleep(start: Date, end: Date, message: String) {
+        // 1. Show Toast
+        sleepToastMessage = message
+        withAnimation {
+            showSleepToast = true
+        }
+        
+        // 2. Schedule Save
+        let item = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            self.saveSleepSession(start: start, end: end)
+            withAnimation {
+                self.showSleepToast = false
+            }
+        }
+        pendingSleepSaveItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: item)
+    }
+    
+    func undoSleepSave() {
+        pendingSleepSaveItem?.cancel()
+        pendingSleepSaveItem = nil
+        withAnimation {
+            showSleepToast = false
+        }
+    }
+    
     // MARK: - Mock for Previews
     static var mock: MindfulnessViewModel {
         let vm = MindfulnessViewModel(mockData: true)
@@ -232,8 +291,9 @@ class MindfulnessViewModel: ObservableObject {
         
         // Mock recent sessions
         vm.recentSessions = [
-            MindfulnessSession(startDate: Date().addingTimeInterval(-3600), endDate: Date().addingTimeInterval(-1800)),
-            MindfulnessSession(startDate: Date().addingTimeInterval(-86400), endDate: Date().addingTimeInterval(-86400 + 1200))
+            MindfulnessSession(startDate: Date().addingTimeInterval(-3600), endDate: Date().addingTimeInterval(-1800), type: .mindfulness),
+            MindfulnessSession(startDate: Date().addingTimeInterval(-86400), endDate: Date().addingTimeInterval(-86400 + 1200), type: .mindfulness),
+            MindfulnessSession(startDate: Date().addingTimeInterval(-172800), endDate: Date().addingTimeInterval(-172800 + 28000), type: .sleep)
         ]
         
         return vm
@@ -246,7 +306,7 @@ class MindfulnessViewModel: ObservableObject {
     }
 }
 
-struct DailyData: Identifiable {
+struct DailyData: Identifiable, Codable {
     let id = UUID()
     let date: Date
     let weekday: String

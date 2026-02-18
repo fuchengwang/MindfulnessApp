@@ -5,6 +5,8 @@ struct SummaryView: View {
     @ObservedObject var viewModel: MindfulnessViewModel
     @State private var isShowingManualEntry = false
     @State private var showingHistory = false
+    @State private var showSettings = false
+    @State private var showSleepRecord = false
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
     
     var body: some View {
@@ -102,30 +104,74 @@ struct SummaryView: View {
                         }
                     }
                     
-                    // Quick Action: Start Session
-                    /*
-                    NavigationLink(destination: SessionView(viewModel: viewModel)) {
+                    // Quick Action: Start Mindfulness
+                    Button(action: {
+                        isShowingManualEntry = true
+                    }) {
                         HStack {
-                            Text("开始正念")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                            Spacer()
-                            Image(systemName: "play.circle.fill")
-                                .font(.title)
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                            Text("记录正念")
+                                .font(.headline)
                         }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.mindfulnessBlue.gradient)
-                        .foregroundColor(.white)
                         .cornerRadius(16)
-                        .shadow(radius: 5)
-                       
-                        
-                    }*/
+                        .shadow(radius: 4)
+                    }
+                    
+                    if viewModel.showSleepRecording {
+                        Button(action: {
+                            showSleepRecord = true
+                        }) {
+                            HStack {
+                                Image(systemName: "moon.fill")
+                                    .font(.title2)
+                                Text("记录睡眠")
+                                    .font(.headline)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(red: 0.85, green: 0.4, blue: 0.4).gradient) // Softer Red
+                            .cornerRadius(16)
+                            .shadow(radius: 4)
+                        }
+                    }
                 }
                 .padding()
             }
             .background(Color.backgroundGray)
             .navigationTitle("摘要")
+            .overlay(alignment: .bottom) {
+                if viewModel.showSleepToast {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("已添加记录")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            Text(viewModel.sleepToastMessage)
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        Spacer()
+                        Button("撤回") {
+                            viewModel.undoSleepSave()
+                        }
+                        .fontWeight(.bold)
+                        .foregroundColor(.yellow)
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.85))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(100)
+                }
+            }
             .onAppear {
                 viewModel.requestAuthorization()
                 viewModel.fetchData()
@@ -133,9 +179,9 @@ struct SummaryView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        isShowingManualEntry = true
+                        showSettings = true
                     }) {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: "person.crop.circle")
                             .font(.system(size: 24))
                             .foregroundColor(.mindfulnessBlue)
                     }
@@ -146,6 +192,12 @@ struct SummaryView: View {
             }
             .sheet(isPresented: $showingHistory) {
                 HistoryCalendarView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showSleepRecord) {
+                SleepRecordView(viewModel: viewModel)
             }
         }
     }

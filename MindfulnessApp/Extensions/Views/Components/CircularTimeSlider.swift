@@ -31,6 +31,12 @@ struct CircularTimeSlider: View {
     @Binding var endTime: Date
     var scale: TimeScale = .hour1
     var baseOffset: Int = 0
+    var primaryColor: Color = .mindfulnessBlue
+    var gradientColors: [Color]? = nil
+    var allowMultiLap: Bool = true
+    var dateLabelProvider: ((Date) -> String?)? = nil
+    var showTimeLabels: Bool = true         // New: Control visibility of "Start"/"End" text
+    var dateLabelFontSize: CGFloat = 10     // New: Control font size of date label
 
     
     // ── 样式常量 ──
@@ -156,14 +162,15 @@ struct CircularTimeSlider: View {
 
     /// 通用渐变弧线生成器
     private func gradientArc(center: CGPoint, radius: CGFloat, start: Double, end: Double) -> some View {
-        // 使用循环渐变色 (Head == Tail) 确保首尾无缝衔接
+        let colors: [Color] = gradientColors ?? [
+            primaryColor.opacity(0.8), // 起点
+            primaryColor.opacity(0.6), // 中间 (Simplified)
+            primaryColor.opacity(0.9), // 过渡
+            primaryColor.opacity(0.8)  // 回归起点 (闭环)
+        ]
+        
         let gradient = AngularGradient(
-            gradient: Gradient(colors: [
-                Color.mindfulnessBlue.opacity(0.8), // 起点
-                Color.cyan.opacity(0.9),            // 中间提亮
-                Color.blue.opacity(0.9),            // 过渡
-                Color.mindfulnessBlue.opacity(0.8)  // 回归起点 (闭环)
-            ]),
+            gradient: Gradient(colors: colors),
             center: .center,
             startAngle: .degrees(start - 90),       // 渐变起始角度跟随弧线起点
             endAngle: .degrees(start - 90 + 360)    // 渐变拉伸一整圈
@@ -183,7 +190,7 @@ struct CircularTimeSlider: View {
         )
         // 固定基础透明度，利用 ZStack 叠加产生变深效果
         .opacity(0.6) 
-        .shadow(color: Color.mindfulnessBlue.opacity(0.3), radius: 6, x: 0, y: 0)
+        .shadow(color: primaryColor.opacity(0.3), radius: 6, x: 0, y: 0)
     }
     
     /// ⑤ 手柄 — 浮起的瓷白色按钮
@@ -205,7 +212,7 @@ struct CircularTimeSlider: View {
             
             Text(text)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.mindfulnessBlue)
+                .foregroundStyle(primaryColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         }
@@ -320,12 +327,21 @@ struct CircularTimeSlider: View {
     
     private func timeColumn(label: String, time: Date) -> some View {
         VStack(spacing: 1) {
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color(.tertiaryLabel))
-                .textCase(.uppercase)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            if showTimeLabels {
+                Text(label)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(.tertiaryLabel))
+                    .textCase(.uppercase)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            
+            if let dateLabel = dateLabelProvider?(time) {
+                 Text(dateLabel)
+                    .font(.system(size: dateLabelFontSize, weight: .semibold)) // Use configured size
+                    .foregroundStyle(Color.secondary)
+            }
+            
             Text(fmtTime(time))
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.primary)
@@ -344,12 +360,12 @@ struct CircularTimeSlider: View {
         
         Text(text)
             .font(.system(size: 20, weight: .semibold, design: .rounded))
-            .foregroundStyle(Color.mindfulnessBlue)
+            .foregroundStyle(primaryColor)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(Color.mindfulnessBlue.opacity(0.1))
+                    .fill(primaryColor.opacity(0.1))
             )
             .lineLimit(1)
             .minimumScaleFactor(0.5)
@@ -382,30 +398,80 @@ struct CircularTimeSlider: View {
         switch c {
         case .start:
             guard snap != startAngle else { return }
-            // 使用角度差值直接计算时间变化量，避免绝对映射的反馈环问题
-            let deltaAngle = adiff(snap, startAngle)
-            let deltaSecs = deltaAngle / 360 * scale.totalMinutes * 60
-            feedback.selectionChanged()
-            startAngle = snap
-            startTime = startTime.addingTimeInterval(deltaSecs)
+            
+            if allowMultiLap {
+                // Multi-lap: Geometric tracking
+                // Track Change of Arc Length (End - Start)
+                // We use normalized diff [0, 360) for MultiLap.
+                
+                var oldDiff = endAngle - startAngle; if oldDiff < 0 { oldDiff += 360 }
+                
+                feedback.selectionChanged()
+                startAngle = snap
+                
+                var newDiff = endAngle - startAngle; if newDiff < 0 { newDiff += 360 }
+                
+                // Update Laps based on Diff Wrap
+                updateExtraLaps(oldDiff: oldDiff, newDiff: newDiff)
+                
+                // Sync TIME from Visual Duration (Angles + Laps)
+                // This ensures Data matches Visuals perfectly
+                let visualDur = durationMinutes() * 60
+                startTime = endTime.addingTimeInterval(-visualDur)
+                
+            } else {
+                // Single-lap: Absolute mapping based on End Time anchor
+                feedback.selectionChanged()
+                startAngle = snap
+                
+                // Calculate duration based on angles (always positive 0...Period)
+                let periodSecs = scale.totalMinutes * 60
+                var diffAngle = endAngle - startAngle
+                if diffAngle < 0 { diffAngle += 360 } // Wrap around
+                
+                let dur = diffAngle / 360 * periodSecs
+                // Start is derived from End
+                startTime = endTime.addingTimeInterval(-dur)
+            }
             
         case .end:
             guard snap != endAngle else { return }
             
-            // 检测是否越过起点（多圈逻辑）
-            let oldArcLen = arcLength(from: startAngle, to: previousEndAngle)
-            let newArcLen = arcLength(from: startAngle, to: snap)
-            
-            if oldArcLen > 270 && newArcLen < 90 {
-                extraLaps += 1
-            } else if oldArcLen < 90 && newArcLen > 270 && extraLaps > 0 {
-                extraLaps -= 1
-            }
-            
-            previousEndAngle = snap
             feedback.selectionChanged()
-            endAngle = snap
-            pushEndDate()
+            
+            if allowMultiLap {
+                // Multi-lap logic (Track crossings)
+                // Track Change of Arc Length (End - Start)
+                
+                var oldDiff = endAngle - startAngle; if oldDiff < 0 { oldDiff += 360 }
+
+                endAngle = snap
+                
+                var newDiff = endAngle - startAngle; if newDiff < 0 { newDiff += 360 }
+                
+                // Update Laps
+                updateExtraLaps(oldDiff: oldDiff, newDiff: newDiff)
+                
+                // Sync TIME from Visual Duration (Angles + Laps)
+                // This ensures Data matches Visuals perfectly
+                let visualDur = durationMinutes() * 60
+                endTime = startTime.addingTimeInterval(visualDur)
+                
+                previousEndAngle = snap
+                // pushEndDate() is for Single-Lap or absolute time logic. 
+                // In Multi-Lap, we use relative duration.
+            } else {
+                 // Single-lap: Absolute mapping based on Start Time anchor
+                 endAngle = snap
+                 // No extra laps for sleep
+                 
+                 let periodSecs = scale.totalMinutes * 60
+                 var diffAngle = endAngle - startAngle
+                 if diffAngle < 0 { diffAngle += 360 }
+                 
+                 let dur = diffAngle / 360 * periodSecs
+                 endTime = startTime.addingTimeInterval(dur)
+            }
             
         case .interval:
             let target = round((initialStartAngle + adiff(a, dragStartAngle)) / step) * step
@@ -417,6 +483,11 @@ struct CircularTimeSlider: View {
             endAngle = (endAngle + delta).truncatingRemainder(dividingBy: 360)
             if endAngle < 0 { endAngle += 360 }
             previousEndAngle = endAngle
+            
+            // Interval always preserves duration, so incremental is fine for both modes?
+            // Yes, checking boundaries for single lap might be needed if shifting pushes it?
+            // But visually it just rotates.
+            // For Single Lap, we assume duration < Period. Shifting just moves entries.
             startTime = startTime.addingTimeInterval(deltaSecs)
             endTime = endTime.addingTimeInterval(deltaSecs)
         }
@@ -459,28 +530,54 @@ struct CircularTimeSlider: View {
         endAngle   = er / scale.totalMinutes * 360
         previousEndAngle = endAngle
         
-        // 根据时间差自动计算圈数（修复重置时圈数不更新的问题）
+        recalculateExtraLaps()
+    }
+    
+    private func recalculateExtraLaps() {
         let duration = endTime.timeIntervalSince(startTime)
         let periodSeconds = scale.totalMinutes * 60
-        if duration > 1.0 { // 避免精度问题，至少要有1秒差值
+        if allowMultiLap && duration > 1.0 { // 避免精度问题，至少要有1秒差值
             // 逻辑：(0, period] -> 0 laps; (period, 2*period] -> 1 lap
             extraLaps = Int((duration - 1.0) / periodSeconds)
         } else {
             extraLaps = 0
         }
     }
+
+    
+    private func updateExtraLaps(oldDiff: Double, newDiff: Double) {
+        // Geometric Lap Tracking: Detect wrap-around of the Arc Length (Diff)
+        // If Diff jumps Min -> Max (e.g. 0 -> 359), it decreased. Laps--.
+        // If Diff jumps Max -> Min (e.g. 359 -> 0), it increased. Laps++.
+        
+        if oldDiff > 270 && newDiff < 90 {
+            extraLaps += 1
+        } else if oldDiff < 90 && newDiff > 270 {
+            if extraLaps > 0 { extraLaps -= 1 }
+        }
+    }
     
     // MARK: ──────────────────────── 工具 ────────────────────────
     
     private func durationMinutes() -> Double {
-        var d = endAngle - startAngle; if d <= 0 { d += 360 }
+        var d = endAngle - startAngle
+        if allowMultiLap {
+            // Multi-Lap: [0, 360). 0 is 0. 60m is 1 lap + 0.
+            if d < 0 { d += 360 }
+        } else {
+            // Single-Lap (Sleep): (0, 360]. 0 is 24h/1h.
+            if d <= 0 { d += 360 }
+        }
         return (d + Double(extraLaps) * 360) / 360 * scale.totalMinutes
     }
     private func inArc(_ a: Double) -> Bool {
         startAngle <= endAngle ? (a >= startAngle && a <= endAngle) : (a >= startAngle || a <= endAngle)
     }
     private func adiff(_ a: Double, _ b: Double) -> Double {
-        (a - b + 180).truncatingRemainder(dividingBy: 360) - 180
+        let diff = a - b
+        if diff < -180 { return diff + 360 }
+        if diff > 180 { return diff - 360 }
+        return diff
     }
     private func fmtTime(_ d: Date) -> String {
         let f = DateFormatter(); f.dateFormat = "HH:mm"; return f.string(from: d)

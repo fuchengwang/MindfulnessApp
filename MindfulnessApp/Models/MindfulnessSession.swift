@@ -5,6 +5,13 @@ struct MindfulnessSession: Identifiable, Hashable {
     let startDate: Date
     let endDate: Date
     
+    enum SessionType: String, Codable {
+        case mindfulness
+        case sleep
+    }
+    
+    let type: SessionType
+    
     var duration: TimeInterval {
         return endDate.timeIntervalSince(startDate)
     }
